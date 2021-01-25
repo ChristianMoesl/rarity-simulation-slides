@@ -12,12 +12,17 @@
 \usepackage{listings}
 \usepackage{hyperref}
 \usepackage{multicol}
+\usepackage{ulem} % Strikethrough using \st
+\usepackage[ruled,vlined]{algorithm2e}
 \usepackage[backend=biber,citestyle=verbose-ibid]{biblatex}
+
 \bibliography{eBanking_Quellen.bib}
+
+\SetKwFor{RepTimes}{repeat}{times}{end}
 
 \title{Rarity Simulation}
 \date{}
-\author{Marcell Haritopoulos & Christian Mösl \\
+\author{Marcell Haritopoulos \& Christian Mösl \\
 Advisor: Professor Christoph Kirsch}
 
 \setbeamertemplate{section in toc}[sections numbered]
@@ -42,11 +47,104 @@ Advisor: Professor Christoph Kirsch}
     \section{IMPORT STUFF}
 \end{frame}
 
-\begin{frame}
-    Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-    
+\begin{frame}{Monster}
+    \begin{itemize}
+		% TODO: RISC-V war ursprünglich ja geplant, oder?
+		\item Symbolic execution engine for \xout{RISC-U in C*} RISC-V binaries in Rust
+		\item Includes a solver (and backends to Z3 and Boolector)
+		\item Only supports binaries emitted by Selfie for now (RISC-U subset of RV64IM and Selfie syscall interface)
+		\item Possibility of dumping control flow graph as dotfile
+    \end{itemize}
 \end{frame}
 
+\begin{frame}{Alternatives to Symbolic Execution}
+	\begin{itemize}
+		\item Symbolic execution does not scale well
+			\begin{itemize}
+				\item Exponential growth of paths
+			\end{itemize}
+		\item Concolic execution
+			\begin{itemize}
+				\item Implemented in C*
+				\item Mixture of concrete and symbolic execution
+				\item Execution takes place concrete
+				\item On read, generate a random value and mark as symbolic.
+				\item Operations on \enquote{symbolic} values recorded in backtrace
+				\item Record branches where symbolic values are involved
+				\item After concrete execution finishes, invert branch condition using backtrace.
+			\end{itemize}
+		\item Rarity Simulation
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Rarity Simulation}
+	\begin{itemize}
+		\item Paper focuses on sequential circuits
+		\item Adapted for software and implemented in Selfie
+		\item Basic Idea:
+		\begin{itemize}
+			\item Most inputs may result in a similar machine state
+			\item Some inputs may provoke significantly different machine states than others
+			\item These \enquote{rare} states may not be encountered often, while others are
+			\item Focus on \enquote{rare} states to detect fatal bugs
+			\item On \texttt{read} system call, an application gets random value
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Rarity Simulation - Algorithm}
+	\begin{algorithm}[H]
+		\SetAlgoLined
+		\KwIn{iterations}
+		\KwIn{cycles}
+		\KwIn{numEngines}
+		engines $\gets$ \{ Initialize \textit{numEngines} new engines \}\;
+		iteration $\gets$ 0\;
+		\RepTimes{iterations}{
+			\ForEach{engine $\in$ engines }{
+				Execute \textit{cycles} instructions on engine \textit{engine}\;
+				\If{Bug encountered during execution}{
+					Report bug\;
+				}
+			}
+			engines $\gets$ FilterRareStates(engines)\;
+			engines $\gets$ PopulateStates(engines, numEngines)\;
+		}
+		\caption{RaritySimulation}
+	\end{algorithm}
+\end{frame}
+
+\begin{frame}{Rarity Simulation - Algorithm}
+		\begin{algorithm}[H]
+		\SetAlgoLined
+		\KwIn{engines}
+		\KwOut{filtered}
+		enginesToKeep $\gets$ 50\;
+		Sort \textit{engines} by engine rarity scoring\;
+		filtered $\gets$ First \textit{enginesToKeep} elements of \textit{engines}\;
+		\caption{FilterRareStates}
+	\end{algorithm}
+\end{frame}
+
+\begin{frame}{Rarity Simulation - Rarity Metric}
+	\begin{algorithm}[H]
+		\SetAlgoLined
+		\KwIn{engines}
+		\KwIn{numEngines}
+		\KwOut{engines}
+		copyInitRatio $\gets$ 0.6\;
+		deltaStates $\gets$ numEngines - |engines|\;
+		statesToCopy $\gets$ $\lceil$deltaStates * copyInitRatio$\rceil$\;
+		statesToCreate $\gets$ deltaStates - statesToCopy\;
+
+		\RepTimes{statesToCopy}{
+			engines $\gets$ engines $\cup$ \{ Copy random engine from \textit{engines} \}\;
+		}
+		\RepTimes{statesToCreate}{
+			engines $\gets$ engines $\cup$ \{ Initialize new engine \}\;
+		}
+	\end{algorithm}
+\end{frame}
 
 \begin{frame}[allowframebreaks]
     \printbibliography
