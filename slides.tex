@@ -39,18 +39,10 @@ Advisor: Professor Christoph Kirsch}
 
 \maketitle
 
-\begin{frame}
-    \tableofcontents
-\end{frame}
-
-\begin{frame}
-    \section{IMPORT STUFF}
-\end{frame}
-
 \begin{frame}{Monster}
     \begin{itemize}
-		% TODO: RISC-V war ursprünglich ja geplant, oder?
-		\item Symbolic execution engine for \xout{RISC-U in C*} RISC-V binaries in Rust
+		\item Symbolic execution engine for RISC-U binaries
+    \item written in Rust
 		\item Includes a solver (and backends to Z3 and Boolector)
 		\item Only supports binaries emitted by Selfie for now (RISC-U subset of RV64IM and Selfie syscall interface)
 		\item Possibility of dumping control flow graph as dotfile
@@ -144,6 +136,28 @@ Advisor: Professor Christoph Kirsch}
 			engines $\gets$ engines $\cup$ \{ Initialize new engine \}\;
 		}
 	\end{algorithm}
+\end{frame}
+
+\begin{frame}{Rarity Measure}
+	\begin{itemize}
+    \item State consists of: program counter, registers, memory
+    \item Enumerate all of state word-wise: $w_i \in [pc, reg_0, \ldots, reg_{31}, memory_0, \ldots, memory_n]$
+    \item Enumerate all of state byte-wise: $b_i \in [ byte_0(w_0), byte_1(w_0), \ldots, byte_7(w_0), byte_0(w_1), \cdots ]$
+    \item Combine byte value and index to an id: $combine(b_i) = i * 2^8 + b_i$
+    \item Count total occurences of every id: $count(id) = \sum_{s \in States} has\_id(s)$
+    \item Counts per state: $\{ count_{combine(b_i)} \}$
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{From Counters to Score}
+  Compute score for every state:
+
+  \begin{itemize}
+    \item Arithmetic mean: \\
+      $\frac{x_1 + x_2 + \cdots + x_n}{n}$
+    \item Harmonic mean: \\
+      $\frac{n}{\frac{1}{x_1} + \dotsb + \frac{1}{x_n}}$
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
