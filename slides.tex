@@ -145,7 +145,7 @@ Advisor: Professor Christoph Kirsch}
     \item Enumerate all of state byte-wise: $b_i \in [ byte_0(w_0), byte_1(w_0), \ldots, byte_7(w_0), byte_0(w_1), \cdots ]$
     \item Combine byte value and index to an id: $combine(b_i) = i * 2^8 + b_i$
     \item Count total occurences of every id: $count(id) = \sum_{s \in States} has\_id(s)$
-    \item Counts per state: $\{ count_{combine(b_i)} \}$
+    \item Counts per state: $\{ count(combine(b_i)) \}$
 	\end{itemize}
 \end{frame}
 
